@@ -1,0 +1,10 @@
+[package]
+name = "libzstd-rs-example"
+version = "0.1.0"
+edition = "2021"
+
+# Demonstrates a zstd round-trip via the `zstd` crate today. libzstd-rs-sys
+# (Trifecta Tech) aims to be the memory-safe, drop-in backend behind this API.
+# https://github.com/trifectatechfoundation/libzstd-rs-sys
+[dependencies]
+zstd = "0.13"

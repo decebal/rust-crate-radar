@@ -1,0 +1,13 @@
+[package]
+name = "stdx-example"
+version = "0.1.0"
+edition = "2021"
+
+# stdx is NOT published to crates.io by design (supply-chain stance): each package
+# is imported directly from the git monorepo, per-package.
+# https://github.com/rust-stdx/stdx
+[dependencies]
+uuid = { git = "https://github.com/rust-stdx/stdx", branch = "main" }
+# Add more as needed, e.g.:
+# base64 = { git = "https://github.com/rust-stdx/stdx", branch = "main" }
+# csv    = { git = "https://github.com/rust-stdx/stdx", branch = "main" }
