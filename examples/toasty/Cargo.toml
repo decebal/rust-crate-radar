@@ -1,0 +1,9 @@
+[package]
+name = "toasty-example"
+version = "0.1.0"
+edition = "2021"
+
+# Targets Toasty 0.6.x — https://crates.io/crates/toasty
+[dependencies]
+toasty = "0.6"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
