@@ -1,0 +1,10 @@
+[package]
+name = "remyx-example"
+version = "0.1.0"
+edition = "2021"
+
+# remyx is published on crates.io — confirm the latest version before pinning.
+# https://crates.io/crates/remyx
+[dependencies]
+remyx = "0.1"
+ratatui = "0.30"
