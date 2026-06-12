@@ -1,0 +1,74 @@
+name: examples
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  examples:
+    name: check examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('examples/*/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      # These examples are intentionally "starter" code for fast-moving crates,
+      # so CI is a DRIFT MONITOR, not a gate: fmt is enforced; check/clippy are
+      # reported per example without failing the whole run. See CONTRIBUTING.md.
+      - name: Format, check, and lint each example
+        shell: bash
+        run: |
+          shopt -s nullglob
+          manifests=(examples/*/Cargo.toml)
+          if [ ${#manifests[@]} -eq 0 ]; then
+            echo "No examples on this branch (expected on \`main\`). Nothing to do."
+            echo "No examples on this branch." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          fmt_failed=0
+          echo "## Example status" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Example | fmt | check | clippy |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+
+          for manifest in "${manifests[@]}"; do
+            dir="$(dirname "$manifest")"
+            name="$(basename "$dir")"
+            echo "::group::$name"
+
+            if cargo fmt --manifest-path "$manifest" --all -- --check; then fmt="✅"; else fmt="❌"; fmt_failed=1; fi
+            if cargo check --manifest-path "$manifest" --locked 2>/dev/null || cargo check --manifest-path "$manifest"; then chk="✅"; else chk="⚠️"; fi
+            if cargo clippy --manifest-path "$manifest" -- -D warnings 2>/dev/null; then clp="✅"; else clp="⚠️"; fi
+
+            echo "| \`$name\` | $fmt | $chk | $clp |" >> "$GITHUB_STEP_SUMMARY"
+            echo "::endgroup::"
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "_✅ pass · ⚠️ needs attention (often crate drift) · ❌ formatting must be fixed_" >> "$GITHUB_STEP_SUMMARY"
+
+          # Only formatting is a hard gate.
+          if [ "$fmt_failed" -ne 0 ]; then
+            echo "::error::One or more examples are not rustfmt-clean. Run \`cargo fmt\`."
+            exit 1
+          fi
